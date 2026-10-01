@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+<div class="page-head"><h1>History</h1><p>Everything you imported, extracted or generated.</p></div>
+
+<div class="tabs">
+    <a href="{{ url_for('main.history', tab='imports') }}" class="{{ 'active' if tab == 'imports' }}">JSON imports ({{ imports|length }})</a>
+    <a href="{{ url_for('main.history', tab='extractions') }}" class="{{ 'active' if tab == 'extractions' }}">Word extractions ({{ extractions|length }})</a>
+    <a href="{{ url_for('main.history', tab='documents') }}" class="{{ 'active' if tab == 'documents' }}">Generated documents ({{ documents|length }})</a>
+</div>
+
+{% if tab == 'imports' %}
+    {% for i in imports %}
+    <details class="entry">
+        <summary>Import #{{ i.id }} &mdash; {{ i.record_count }} record(s) &mdash; {{ i.date_range or 'no dates' }}
+            <span class="badge info">{{ i.status }}</span> <span class="muted small">{{ i.imported_at|pretty_dt }}</span></summary>
+        <div class="btn-row"><a class="btn sm secondary" href="{{ url_for('json_routes.import_page', import_id=i.id) }}">Load into the import page</a></div>
+        <pre>{{ i.source_data }}</pre>
+    </details>
+    {% else %}<div class="card muted">No JSON imports yet.</div>{% endfor %}
+
+{% elif tab == 'extractions' %}
+    {% for e in extractions %}
+    <details class="entry">
+        <summary>Extraction #{{ e.id }} &mdash; {{ e.filename }}
+            <span class="badge {{ 'ok' if e.status == 'Successful' else 'warning' }}">{{ e.status }}</span></summary>
+        <p>Records extracted: <strong>{{ e.record_count }}</strong><br>
+           Date range: {{ e.date_range or '&ndash;'|safe }}<br>
+           <span class="muted small">{{ e.created_at|pretty_dt }}</span></p>
+        {% if e.parsed.stats %}<p class="small muted">Rows read: {{ e.parsed.stats.rows_read }}, skipped: {{ e.parsed.stats.rows_skipped }}, empty rows dropped: {{ e.parsed.stats.empty_dropped }}</p>{% endif %}
+    </details>
+    {% else %}<div class="card muted">No extractions yet.</div>{% endfor %}
+
+{% else %}
+    {% for d in documents %}
+    <details class="entry">
+        <summary>{{ d.operation|capitalize }} #{{ d.id }} &mdash; {{ d.filename }}
+            <span class="badge {{ 'ok' if d.status in ('Successful', 'Passed') else 'warning' }}">{{ d.status }}</span></summary>
+        <p>Records: <strong>{{ d.record_count }}</strong> &middot; Date range: {{ d.date_range or '&ndash;'|safe }}<br>
+           <span class="muted small">{{ d.created_at|pretty_dt }}</span></p>
+        {% if d.output_file %}<a class="btn sm secondary" href="{{ url_for('documents.download', kind='generated', filename=d.output_file) }}">Download {{ d.output_file }}</a>{% endif %}
+        {% if d.parsed.mode %}<p class="small muted">Mode: {{ d.parsed.mode }}</p>{% endif %}
+    </details>
+    {% else %}<div class="card muted">No documents generated yet.</div>{% endfor %}
+{% endif %}
+{% endblock %}

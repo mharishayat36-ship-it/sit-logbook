@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Field Mapping{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Field mapping</h1>
+    <p>Tell the program which JSON field belongs in which Word table and column. Mappings are stored in the database.</p>
+</div>
+
+<form method="post" class="card">
+    <datalist id="table-names">
+        {% if analysis %}{% for t in analysis.tables %}<option value="{{ t.name }}">{% endfor %}{% endif %}
+        <option value="Attendance"><option value="Daily Progress">
+    </datalist>
+    <datalist id="column-names">
+        {% if analysis %}{% set seen = [] %}{% for t in analysis.tables %}{% for c in t.columns %}{% if c and c not in seen %}{% set _ = seen.append(c) %}<option value="{{ c }}">{% endif %}{% endfor %}{% endfor %}{% endif %}
+    </datalist>
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr><th>JSON field</th><th></th><th>Word table</th><th></th><th>Word column</th><th>Remove</th></tr></thead>
+        <tbody id="mapping-body">
+        {% for m in mappings %}
+        <tr>
+            <td><select name="json_field">{% for key, label in fields %}<option value="{{ key }}" {{ 'selected' if key == m.json_field }}>{{ key }}</option>{% endfor %}</select></td>
+            <td class="arrow">&rarr;</td>
+            <td><input type="text" name="word_table" list="table-names" value="{{ m.word_table }}"></td>
+            <td class="arrow">&rarr;</td>
+            <td><input type="text" name="word_column" list="column-names" value="{{ m.word_column }}"></td>
+            <td><input type="checkbox" name="remove" value="{{ loop.index0 }}" aria-label="Remove this mapping"></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <template id="mapping-row-template">
+        <tr>
+            <td><select name="json_field">{% for key, label in fields %}<option value="{{ key }}">{{ key }}</option>{% endfor %}</select></td>
+            <td class="arrow">&rarr;</td>
+            <td><input type="text" name="word_table" list="table-names"></td>
+            <td class="arrow">&rarr;</td>
+            <td><input type="text" name="word_column" list="column-names"></td>
+            <td><input type="checkbox" name="remove" value="__INDEX__" aria-label="Remove this mapping"></td>
+        </tr>
+    </template>
+    <div class="btn-row">
+        <button class="btn" type="submit">Save mappings</button>
+        <button class="btn secondary" type="button" id="add-mapping-row">+ Add mapping</button>
+    </div>
+    <p class="muted small">Table names are matched to the Word document by heading or by type (Attendance / Daily Progress / &ldquo;Table 2&rdquo;).
+       If several tables share a name (for example one table per week) the date decides which one is used.</p>
+</form>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h3>Auto-detect from the active document</h3>
+        {% if analysis %}
+        <p class="muted small">Reads the column headers of <strong>{{ doc.original_name }}</strong> and replaces the mappings above.</p>
+        <form method="post" action="{{ url_for('documents.mappings_auto') }}" data-confirm="Replace all current mappings with the detected ones?">
+            <button class="btn secondary" type="submit">Auto-detect mappings</button>
+        </form>
+        {% else %}<p class="muted">Upload a document first (Document Analyzer page).</p>{% endif %}
+    </div>
+    <div class="card">
+        <h3>Reset to defaults</h3>
+        <p class="muted small">Restores the standard Attendance and Daily Progress mappings.</p>
+        <form method="post" action="{{ url_for('documents.mappings_reset') }}" data-confirm="Replace all current mappings with the defaults?">
+            <button class="btn danger" type="submit">Reset mappings</button>
+        </form>
+    </div>
+</div>
+
+{% if analysis %}
+<div class="card">
+    <h3>Tables in {{ doc.original_name }}</h3>
+    <ul class="vlist">
+    {% for t in analysis.tables %}
+        <li><strong>{{ t.name }}</strong> <span class="msg">Columns: {{ t.columns|join(' | ') }}</span></li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

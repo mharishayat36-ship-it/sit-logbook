@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Weekly Report{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Weekly report</h1>
+    <p>Write one weekly summary; it is divided logically across the week's working days (5 days, or 6 in even weeks).</p>
+</div>
+
+<div class="grid grid-2">
+<form method="post" class="card" data-once>
+    <div class="row">
+        <div class="field">
+            <label for="week">Week *</label>
+            <input type="number" id="week" name="week" min="1" max="60" value="{{ values.week }}" required>
+        </div>
+        <div class="field">
+            <label for="project">Project</label>
+            <input type="text" id="project" name="project" value="{{ values.project }}" placeholder="3D Cube Runner">
+        </div>
+    </div>
+    <div id="week-info" class="hint" style="margin:-.4rem 0 .8rem"></div>
+    <div class="field">
+        <label for="progress">Weekly progress *</label>
+        <textarea id="progress" name="progress" rows="6" required placeholder="Learned Unity Editor basics, GameObjects and Components, player movement, Rigidbody physics, camera follow, collision detection, scoring and UI.">{{ values.progress }}</textarea>
+        <div class="hint">Separate topics with commas, semicolons or new lines.</div>
+    </div>
+    <div class="row">
+        <div class="field"><label for="technologies">Technologies (optional)</label><input type="text" id="technologies" name="technologies" value="{{ values.technologies }}" placeholder="Unity, C#"></div>
+        <div class="field"><label for="check_in">Check in</label><input type="text" id="check_in" name="check_in" value="{{ values.check_in }}"></div>
+        <div class="field"><label for="check_out">Check out</label><input type="text" id="check_out" name="check_out" value="{{ values.check_out }}"></div>
+    </div>
+    <div class="field"><label for="learning_outcomes">Learning outcomes (optional)</label><textarea id="learning_outcomes" name="learning_outcomes" rows="2">{{ values.learning_outcomes }}</textarea></div>
+    <div class="field"><label for="notes">Notes (optional)</label><textarea id="notes" name="notes" rows="2">{{ values.notes }}</textarea></div>
+    <div class="btn-row">
+        <button class="btn" type="submit" name="action" value="distribute">Distribute across days &rarr;</button>
+        <button class="btn secondary" type="submit" name="action" value="save">Save report only</button>
+    </div>
+</form>
+
+<div class="card">
+    <h3>Saved weekly reports</h3>
+    {% if reports %}
+    <ul class="vlist">
+        {% for r in reports %}
+        <li><strong>Week {{ r.week_number }}</strong> &ndash; {{ r.project or 'no project' }}
+            <a class="small" href="{{ url_for('main.weekly_report', load=r.week_number) }}">load</a>
+            <span class="msg">{{ r.weekly_progress[:110] }}{{ '…' if r.weekly_progress|length > 110 }}</span></li>
+        {% endfor %}
+    </ul>
+    {% else %}<p class="muted">No weekly reports saved yet.</p>{% endif %}
+</div>
+</div>
+{% endblock %}

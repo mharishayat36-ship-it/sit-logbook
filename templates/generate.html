@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Generate Logbook{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Generate logbook</h1>
+    <p>Fill a copy of your Word template with the daily entries saved in the database.</p>
+</div>
+
+{% if not docs %}
+<div class="notice warning">No template uploaded yet. <a href="{{ url_for('documents.analyzer') }}">Upload a .docx first.</a></div>
+{% elif count == 0 %}
+<div class="notice warning">The database has no daily entries yet. Add entries, <a href="{{ url_for('json_routes.import_page') }}">import JSON</a> or use the <a href="{{ url_for('main.weekly_report') }}">weekly report</a>.</div>
+{% else %}
+<form method="post" class="card">
+    <p>{{ count }} saved entr{{ 'y' if count == 1 else 'ies' }} available.</p>
+    <div class="row">
+        <div class="field">
+            <label for="doc_id">Word template</label>
+            <select id="doc_id" name="doc_id">
+                {% for d in docs %}<option value="{{ d.id }}" {{ 'selected' if doc and doc.id == d.id }}>{{ d.original_name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label for="mode">Insertion mode</label>
+            <select id="mode" name="mode">
+                {% for key, label in modes.items() %}<option value="{{ key }}" {{ 'selected' if key == 'add' }}>{{ label }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field"><label for="date_from">From date (optional)</label><input type="date" id="date_from" name="date_from"></div>
+        <div class="field"><label for="date_to">To date (optional)</label><input type="date" id="date_to" name="date_to"></div>
+    </div>
+    <button class="btn" type="submit">Preview changes &rarr;</button>
+</form>
+<div class="card">
+    <h3>Insertion modes</h3>
+    <ul>
+        <li><strong>Update existing rows only</strong> &ndash; only dates already present in the template are filled.</li>
+        <li><strong>Add missing rows</strong> &ndash; empty rows are used first, then new rows are inserted in date order.</li>
+        <li><strong>Strict</strong> &ndash; a date that is not in the template is reported as an error and nothing is changed for it.</li>
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Daily Entry{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>{{ 'Edit daily entry' if entry else 'New daily entry' }}</h1>
+    <p>The date is the main key. The day name and week number are calculated for you.</p>
+</div>
+
+<form method="post" class="card">
+    <div class="row">
+        <div class="field">
+            <label for="date">Date *</label>
+            <input type="date" id="date" name="date" value="{{ values.date }}" required>
+            <div id="date-info" class="hint"></div>
+        </div>
+        <div class="field">
+            <label for="day">Day</label>
+            <input type="text" id="day" name="day" value="{{ values.day }}" placeholder="auto">
+        </div>
+        <div class="field">
+            <label for="check_in">Check in</label>
+            <input type="text" id="check_in" name="check_in" value="{{ values.check_in }}" placeholder="09:00 AM">
+        </div>
+        <div class="field">
+            <label for="check_out">Check out</label>
+            <input type="text" id="check_out" name="check_out" value="{{ values.check_out }}" placeholder="05:00 PM">
+        </div>
+    </div>
+    <div class="field">
+        <label for="task">Task</label>
+        <textarea id="task" name="task" rows="3">{{ values.task }}</textarea>
+    </div>
+    <div class="row">
+        <div class="field"><label for="project">Project</label><input type="text" id="project" name="project" value="{{ values.project }}"></div>
+        <div class="field"><label for="domain">Domain</label><input type="text" id="domain" name="domain" value="{{ values.domain }}"></div>
+        <div class="field"><label for="tools">Tools</label><input type="text" id="tools" name="tools" value="{{ values.tools }}"></div>
+    </div>
+    <div class="field">
+        <label for="learning">Learning</label>
+        <textarea id="learning" name="learning" rows="3">{{ values.learning }}</textarea>
+    </div>
+    <div class="field">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="2">{{ values.notes }}</textarea>
+    </div>
+    <div class="btn-row">
+        <button class="btn" type="submit">Save entry</button>
+        <a class="btn secondary" href="{{ url_for('main.entries') }}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

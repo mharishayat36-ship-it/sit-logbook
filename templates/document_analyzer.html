@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Document Analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Document Analyzer</h1>
+    <p>Upload your Word logbook template and see every table, column and date column the program found.</p>
+</div>
+
+<div class="grid grid-2">
+    <form method="post" action="{{ url_for('documents.upload') }}" enctype="multipart/form-data" class="card" data-once>
+        <h3>Upload a .docx template</h3>
+        <input type="hidden" name="next" value="analyzer">
+        <div class="field">
+            <input type="file" name="document" accept=".docx" required>
+            <div class="hint">Only .docx files up to 16 MB. The original is kept untouched &ndash; results are always written to a new copy.</div>
+        </div>
+        <button class="btn" type="submit">Upload &amp; analyze</button>
+    </form>
+
+    <div class="card">
+        <h3>Uploaded documents</h3>
+        {% if docs %}
+        <ul class="vlist">
+            {% for d in docs %}
+            <li>
+                <span class="status-dot {{ 'ok' if d.is_active }}"></span>
+                <a href="{{ url_for('documents.analyzer', doc=d.id) }}"><strong>{{ d.original_name }}</strong></a>
+                <span class="muted small">{{ d.size|filesize }} &middot; {{ d.uploaded_at|pretty_dt }}</span>
+                {% if d.is_active %}<span class="badge ok">active</span>{% else %}
+                <form class="inline-form" method="post" action="{{ url_for('documents.activate', doc_id=d.id) }}"><button class="btn sm secondary" type="submit">Use</button></form>{% endif %}
+                <form class="inline-form" method="post" action="{{ url_for('documents.delete_document', doc_id=d.id) }}" data-confirm="Remove this uploaded file?"><button class="btn sm danger" type="submit">Remove</button></form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="muted">No document uploaded yet.</p>{% endif %}
+    </div>
+</div>
+
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+{% if analysis %}
+<div class="card">
+    <h2 style="margin-top:0">Document: {{ doc.original_name }}</h2>
+    <p><strong>Tables found:</strong> {{ analysis.table_count }}
+       {% if analysis.header_text %}&middot; <span class="muted">header: {{ analysis.header_text }}</span>{% endif %}
+       {% if analysis.footer_text %}&middot; <span class="muted">footer: {{ analysis.footer_text }}</span>{% endif %}</p>
+    {% for w in analysis.warnings %}<div class="notice warning">{{ w }}</div>{% endfor %}
+    <div class="btn-row" style="margin-top:0">
+        <a class="btn secondary" href="{{ url_for('documents.mappings') }}">Configure field mapping</a>
+        <a class="btn secondary" href="{{ url_for('extract.extract_page', doc=doc.id) }}">Extract data</a>
+        <a class="btn secondary" href="{{ url_for('json_routes.import_page') }}">Import JSON</a>
+    </div>
+</div>
+
+{% for t in analysis.tables %}
+<div class="card">
+    <h3>Table {{ t.number }} <span class="badge info">{{ t.name }}</span></h3>
+    <p class="small muted">
+        {{ t.rows }} rows &times; {{ t.cols }} columns &middot; header row: {{ t.header_row + 1 }} &middot;
+        date column: {% if t.date_col is not none %}<strong>{{ t.date_col_name or ('column ' ~ (t.date_col + 1)) }}</strong>{% else %}<span class="badge warning">not detected</span>{% endif %} &middot;
+        {{ t.data_rows }} data rows, {{ t.empty_rows }} completely empty, {{ t.blank_rows }} available blank rows
+    </p>
+    <p><strong>Columns:</strong>
+        {% for c in t.columns %}<span class="badge neutral">{{ c or '(empty)' }}</span> {% endfor %}</p>
+    {% for n in t.notes %}<div class="notice info">{{ n }}</div>{% endfor %}
+    {% if t.samples %}
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr>{% for c in t.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for row in t.samples %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table>
+    </div>
+    <div class="hint">Sample data (first non-empty rows)</div>
+    {% else %}<p class="muted small">No data rows yet.</p>{% endif %}
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

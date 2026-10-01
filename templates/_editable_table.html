@@ -1,0 +1,56 @@
+{# Editable records table shared by the weekly preview and the extraction preview.
+   Expects: records (list of dict), statuses (optional list), draft. #}
+{% set long_fields = ['task', 'learning', 'notes', 'tools'] %}
+<div id="editor" data-save-url="{{ url_for('drafts.save_draft', draft_id=draft.id) }}">
+    <div class="table-wrap">
+        <table class="data edit" id="records-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    {% for f in FIELDS %}<th>{{ FIELD_LABELS[f] }}</th>{% endfor %}
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="records-body">
+            {% for rec in records %}
+                {% set st = statuses[loop.index0] if statuses else none %}
+                <tr class="{{ 'row-' ~ st.status if st and st.status != 'ok' }}">
+                    <td class="status-cell">
+                        {% if st %}<span class="badge {{ st.status }}">{{ {'ok': 'Valid', 'warning': 'Warning', 'error': 'Error'}[st.status] }}</span>
+                        <div class="small muted msg-cell">{% for m in st.messages %}{{ m.text }}<br>{% endfor %}</div>{% endif %}
+                    </td>
+                    {% for f in FIELDS %}
+                    <td class="col-{{ f }}">
+                        {% if f == 'date' %}<input type="date" data-field="date" value="{{ rec.get('date', '') }}">
+                        {% elif f in long_fields %}<textarea data-field="{{ f }}" rows="2">{{ rec.get(f, '') }}</textarea>
+                        {% else %}<input type="text" data-field="{{ f }}" value="{{ rec.get(f, '') }}">{% endif %}
+                    </td>
+                    {% endfor %}
+                    <td><button type="button" class="btn sm danger delete-row" title="Delete this record">&#10005;</button></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <template id="row-template">
+        <tr>
+            <td class="status-cell"><span class="badge neutral">New</span><div class="small muted msg-cell"></div></td>
+            {% for f in FIELDS %}
+            <td class="col-{{ f }}">
+                {% if f == 'date' %}<input type="date" data-field="date">
+                {% elif f in long_fields %}<textarea data-field="{{ f }}" rows="2"></textarea>
+                {% else %}<input type="text" data-field="{{ f }}">{% endif %}
+            </td>
+            {% endfor %}
+            <td><button type="button" class="btn sm danger delete-row" title="Delete this record">&#10005;</button></td>
+        </tr>
+    </template>
+
+    <div class="btn-row">
+        <button type="button" class="btn secondary" id="add-row">+ Add record</button>
+        <button type="button" class="btn" id="save-changes">Save changes</button>
+        <span id="save-state" class="muted small"></span>
+    </div>
+    <div id="editor-errors"></div>
+</div>

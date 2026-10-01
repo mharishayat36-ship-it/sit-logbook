@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Preview Changes{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Preview of changes</h1>
+    <p>Template: <strong>{{ doc.original_name }}</strong> &middot; mode: <strong>{{ plan.mode_label }}</strong> &middot; {{ record_count }} date(s).
+       Nothing has been written yet.</p>
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="num">{{ plan.stats['update'] }}</div><div class="lbl">Rows updated</div></div>
+    <div class="stat"><div class="num">{{ plan.stats.add }}</div><div class="lbl">Rows added</div></div>
+    <div class="stat"><div class="num">{{ plan.stats.nochange }}</div><div class="lbl">Already up to date</div></div>
+    <div class="stat"><div class="num">{{ plan.stats.skip }}</div><div class="lbl">Skipped</div></div>
+    <div class="stat"><div class="num">{{ plan.stats.error }}</div><div class="lbl">Errors</div></div>
+</div>
+
+{% for issue in plan.issues if issue.level != 'info' %}
+<div class="notice {{ issue.level }}"><strong>{{ 'ERROR' if issue.level == 'error' else 'WARNING' }}</strong> &mdash; {{ issue.text }}</div>
+{% endfor %}
+
+{% if plan.targets %}
+<p class="muted small">Target tables:
+    {% for t in plan.targets %}<strong>{{ t.name }}</strong>{% if t.source != 'mapping' %} (auto-detected){% endif %}{{ ', ' if not loop.last }}{% endfor %}</p>
+{% endif %}
+
+{% for ch in plan.changes %}
+<div class="change">
+    <div class="change-head">
+        <strong>Table: {{ ch.table }}</strong>
+        <span>Row: {{ ch.date_label }}{% if ch.row_number %} (row {{ ch.row_number }}){% endif %}</span>
+        <span class="badge {{ {'update': 'info', 'add': 'ok', 'fill_blank': 'ok', 'skip': 'warning', 'error': 'error', 'nochange': 'neutral'}[ch.action] }}">
+            {{ {'update': 'Update row', 'add': 'Add new row', 'fill_blank': 'Fill empty row', 'skip': 'Skipped', 'error': 'Error', 'nochange': 'No change'}[ch.action] }}</span>
+    </div>
+    <div class="change-body">
+        {% if ch.message %}<div class="{{ 'notice error' if ch.action == 'error' else 'muted small' }}">{{ ch.message }}</div>{% endif %}
+        {% for c in ch.cells %}{% if c.changed %}
+        <div class="cell-change">
+            <span class="col">{{ c.column }}:</span>
+            {% if c.old %}<span class="old">{{ c.old }}</span>{% else %}<span class="empty">EMPTY</span>{% endif %}
+            <span class="arrow">&rarr;</span><span class="new">{{ c.new }}</span>
+        </div>
+        {% endif %}{% endfor %}
+    </div>
+</div>
+{% endfor %}
+{% if not plan.changes %}<div class="card muted">No changes were calculated.</div>{% endif %}
+
+<div class="card">
+    {% if has_work %}
+    <form method="post" action="{{ url_for('documents.confirm_generate', draft_id=draft.id) }}" data-once>
+        <input type="hidden" name="doc_id" value="{{ doc.id }}">
+        <input type="hidden" name="mode" value="{{ mode }}">
+        <input type="hidden" name="day_policy" value="{{ policy }}">
+        {% if draft.kind != 'db' %}
+        <div class="inline"><input type="checkbox" id="also_save" name="also_save" value="1"><label for="also_save">Also save these records to the database</label></div>
+        {% endif %}
+        <div class="btn-row">
+            <button class="btn success" type="submit">Confirm and Generate</button>
+            <a class="btn secondary" href="{{ back }}">Go Back</a>
+        </div>
+    </form>
+    <p class="muted small">A new file <code>{{ doc.original_name }}</code> &rarr; <code>..._Completed.docx</code> is created. Your original template is never changed.</p>
+    {% else %}
+    <div class="notice warning">Nothing would be written to the document. Go back and change the mode or the mappings.</div>
+    <div class="btn-row"><a class="btn secondary" href="{{ back }}">Go Back</a>
+        <a class="btn secondary" href="{{ url_for('documents.mappings') }}">Field Mapping</a></div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h1 style="color:var(--ok)">&#10003; {{ title }}</h1>
+    <p>{{ message }}</p>
+    {% if stats %}
+    <p class="muted small">Updated rows: {{ stats['update'] }} &middot; added rows: {{ stats.add }} &middot; skipped: {{ stats.skip }} &middot; errors: {{ stats.error }} &middot; already up to date: {{ stats.nochange }}</p>
+    {% endif %}
+    {% for w in warnings %}<div class="notice warning">{{ w }}</div>{% endfor %}
+    <div class="btn-row">
+        {% if download %}<a class="btn success" href="{{ download }}">Download {{ download_name }}</a>{% endif %}
+        {% if roundtrip %}<a class="btn secondary" href="{{ roundtrip }}">Run round-trip validation</a>{% endif %}
+        {% if extract %}<a class="btn secondary" href="{{ extract }}">Extract data from a Word file</a>{% endif %}
+        <a class="btn secondary" href="{{ url_for('main.history') }}">History</a>
+        <a class="btn secondary" href="{{ url_for('main.index') }}">Dashboard</a>
+    </div>
+</div>
+{% endblock %}

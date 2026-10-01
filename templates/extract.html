@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Extract Word Data{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Extract data from a Word logbook</h1>
+    <p>Upload → analyse tables → map fields → extract → combine tables by date → preview &amp; edit → export.</p>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h3>1. Choose the Word document</h3>
+        <form method="post" action="{{ url_for('documents.upload') }}" enctype="multipart/form-data" data-once>
+            <input type="hidden" name="next" value="extract">
+            <div class="field">
+                <label for="document">Upload a .docx file</label>
+                <input type="file" id="document" name="document" accept=".docx" required>
+            </div>
+            <button class="btn secondary" type="submit">Upload</button>
+        </form>
+        {% if docs %}
+        <hr style="border:0;border-top:1px solid var(--line);margin:1rem 0">
+        <form method="get">
+            <div class="field">
+                <label for="doc">Or use a previously uploaded document</label>
+                <select id="doc" name="doc" onchange="this.form.submit()">
+                    {% for d in docs %}<option value="{{ d.id }}" {{ 'selected' if doc and doc.id == d.id }}>{{ d.original_name }} ({{ d.uploaded_at|pretty_dt }})</option>{% endfor %}
+                </select>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>2. Detected tables &amp; mapping</h3>
+        {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+        {% if analysis %}
+            <p>{{ analysis.table_count }} table(s) found in <strong>{{ doc.original_name }}</strong>.</p>
+            {% if targets %}
+            <ul class="vlist">
+            {% for t in targets %}
+                <li><strong>{{ t.name }}</strong>
+                    <span class="badge {{ 'info' if t.source == 'mapping' else 'neutral' }}">{{ 'saved mapping' if t.source == 'mapping' else 'auto-detected' }}</span>
+                    <span class="msg">Fields: {% for f in t.fields %}{{ labels[f] }}{{ ', ' if not loop.last }}{% endfor %}</span></li>
+            {% endfor %}
+            </ul>
+            {% else %}
+            <div class="notice warning">No table with a date column was found. See <a href="{{ url_for('documents.analyzer') }}">Document Analyzer</a> and <a href="{{ url_for('documents.mappings') }}">Field Mapping</a>.</div>
+            {% endif %}
+            <a class="small" href="{{ url_for('documents.mappings') }}">Adjust mappings</a>
+        {% elif not doc %}
+            <p class="muted">Upload a document to begin.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if doc and analysis and targets %}
+<form method="post" action="{{ url_for('extract.run_extract') }}" class="card" data-once>
+    <h3>3. Extract</h3>
+    <input type="hidden" name="doc_id" value="{{ doc.id }}">
+    <div class="inline">
+        <input type="checkbox" id="skip_empty" name="skip_empty" value="1" checked>
+        <label for="skip_empty">Skip rows that only contain a date (empty template rows)</label>
+    </div>
+    <p class="muted small">Rows from tables that share a date are combined into one record. You can review and edit everything before exporting.</p>
+    <button class="btn" type="submit">Extract records &rarr;</button>
+</form>
+{% endif %}
+{% endblock %}

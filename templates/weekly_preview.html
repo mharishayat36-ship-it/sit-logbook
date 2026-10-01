@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Weekly Preview{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Week {{ meta.week }} &mdash; daily entries</h1>
+    <p>{{ records|length }} working days ({{ 'Monday&ndash;Saturday'|safe if saturday else 'Monday&ndash;Friday'|safe }}). Edit anything before saving or generating.</p>
+</div>
+
+{% include "_editable_table.html" %}
+
+<div class="grid grid-2" style="margin-top:1rem">
+    <div class="card">
+        <h3>Save to database</h3>
+        <p class="muted small">Stores these entries (existing dates are updated).</p>
+        <form method="post" action="{{ url_for('drafts.to_database', draft_id=draft.id) }}" class="needs-save">
+            <button class="btn success" type="submit">Save to database</button>
+        </form>
+    </div>
+    <div class="card">
+        <h3>Generate Word</h3>
+        {% if doc %}
+        <form method="post" action="{{ url_for('documents.preview_changes', draft_id=draft.id) }}" class="needs-save">
+            <input type="hidden" name="doc_id" value="{{ doc.id }}">
+            <div class="field">
+                <label for="mode">Insertion mode</label>
+                <select id="mode" name="mode">
+                    <option value="add" selected>Add missing rows</option>
+                    <option value="update">Update existing rows only</option>
+                    <option value="strict">Strict (error if date missing)</option>
+                </select>
+            </div>
+            <button class="btn" type="submit">Preview changes in {{ doc.original_name }} &rarr;</button>
+        </form>
+        {% else %}
+        <p class="muted">Upload a Word template first.</p>
+        <a class="btn secondary" href="{{ url_for('documents.analyzer') }}">Upload template</a>
+        {% endif %}
+    </div>
+</div>
+<div class="btn-row"><a class="btn secondary" href="{{ url_for('main.weekly_report', load=meta.week) }}">&larr; Back to the report</a></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/extraction.js') }}"></script>{% endblock %}

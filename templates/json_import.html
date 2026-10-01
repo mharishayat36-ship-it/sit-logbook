@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Import JSON{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Import JSON</h1>
+    <p>Paste one record, an array of records, or table-specific JSON. Nothing is written until you validate, preview and confirm.</p>
+</div>
+
+{% if not doc %}
+<div class="notice warning">No Word template is selected. You can still validate and save to the database; to insert into Word,
+    <a href="{{ url_for('documents.analyzer') }}">upload a .docx</a> first.</div>
+{% endif %}
+
+<form method="post" class="card" data-once>
+    <div class="field">
+        <label for="json_text">JSON data</label>
+        <textarea id="json_text" name="json_text" class="mono" rows="16" spellcheck="false"
+                  placeholder='{"date": "2026-09-28", "day": "Monday", "task": "..."}'>{{ text }}</textarea>
+        <div id="json-status" class="hint"></div>
+    </div>
+    {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+    <div class="btn-row">
+        <button class="btn" type="submit">Validate &amp; preview &rarr;</button>
+        <button class="btn secondary" type="button" id="format-json">Format JSON</button>
+        <label class="btn secondary" for="json-file" style="margin:0">Load .json file</label>
+        <input type="file" id="json-file" accept=".json,.txt,application/json" hidden>
+        <button class="btn secondary" type="button" id="clear-json">Clear</button>
+    </div>
+</form>
+
+<div class="card">
+    <h3>Examples (click to load)</h3>
+    <div class="btn-row" style="margin-top:0">
+        <button class="btn secondary sm" type="button" data-example="single">Single record</button>
+        <button class="btn secondary sm" type="button" data-example="multiple">Multiple records</button>
+        <button class="btn secondary sm" type="button" data-example="tables">Table-specific</button>
+    </div>
+    <p class="muted small">Accepted field names: date, day, check_in, check_out, task, project, domain, tools, learning, notes.
+       Only <code>date</code> is required (YYYY-MM-DD); the weekday is calculated and checked for you.</p>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/json_import.js') }}"></script>{% endblock %}

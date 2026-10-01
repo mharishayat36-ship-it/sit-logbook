@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Daily Entries{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Saved daily entries</h1>
+    <p>{{ rows|length }} entr{{ 'y' if rows|length == 1 else 'ies' }} in the database.</p>
+</div>
+<div class="btn-row" style="margin-top:0;margin-bottom:.8rem">
+    <a class="btn" href="{{ url_for('main.daily_entry') }}">New entry</a>
+    <a class="btn secondary" href="{{ url_for('documents.generate_page') }}">Generate Word logbook</a>
+    {% if rows %}
+    <a class="btn secondary" href="{{ url_for('main.export_entries', fmt='json') }}">Export JSON</a>
+    <a class="btn secondary" href="{{ url_for('main.export_entries', fmt='csv') }}">Export CSV</a>
+    <a class="btn secondary" href="{{ url_for('main.export_entries', fmt='xlsx') }}">Export Excel</a>
+    {% endif %}
+</div>
+{% if rows %}
+<div class="table-wrap">
+<table class="data">
+    <thead><tr><th>Week</th><th>Date</th><th>Day</th><th>In</th><th>Out</th><th>Task</th><th>Project</th><th>Domain</th><th>Tools</th><th>Learning</th><th></th></tr></thead>
+    <tbody>
+    {% for e in rows %}
+        <tr>
+            <td>{{ e.week_number }}</td>
+            <td>{{ e.date|pretty_date }}</td><td>{{ e.day }}</td><td>{{ e.check_in }}</td><td>{{ e.check_out }}</td>
+            <td>{{ e.task }}</td><td>{{ e.project }}</td><td>{{ e.domain }}</td><td>{{ e.tools }}</td><td>{{ e.learning }}</td>
+            <td style="white-space:nowrap">
+                <a class="btn sm secondary" href="{{ url_for('main.daily_entry', entry_id=e.id) }}">Edit</a>
+                <form class="inline-form" method="post" action="{{ url_for('main.delete_entry', entry_id=e.id) }}" data-confirm="Delete the entry for {{ e.date|pretty_date }}?">
+                    <button class="btn sm danger" type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="card muted">Nothing saved yet. Add a daily entry, import JSON, or distribute a weekly report.</div>
+{% endif %}
+{% endblock %}

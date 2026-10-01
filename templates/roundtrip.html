@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Round-Trip Validation{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Round-Trip Validation</h1>
+    <p>JSON &rarr; Word &rarr; extract &rarr; JSON, using a temporary copy of <strong>{{ doc.original_name }}</strong>. Your files are not changed.</p>
+</div>
+
+{% for e in report.errors %}<div class="notice error">{{ e }}</div>{% endfor %}
+
+<div class="card">
+    <p><strong>Records:</strong> {{ report.records }} &middot; found again after reading the document back: <strong>{{ report.found }}</strong>
+       {% if report.ok %}<span class="badge ok">All data preserved</span>{% else %}<span class="badge warning">Differences found</span>{% endif %}</p>
+    <ul class="vlist">
+    {% for f in report.fields %}
+        <li class="{{ {'ok': 'ok', 'changed': 'error', 'unmapped': 'warning'}[f.status] }}">
+            <span class="sym">{{ {'ok': '✓', 'changed': '✗', 'unmapped': '⚠'}[f.status] }}</span>
+            {{ f.label }} {{ 'preserved' if f.status == 'ok' else ('changed' if f.status == 'changed' else 'not stored') }}
+            <span class="muted small">({{ f.preserved }}/{{ f.total }})</span>
+            {% for d in f.diffs %}<span class="msg">{{ d }}</span>{% endfor %}
+        </li>
+    {% endfor %}
+    </ul>
+    {% for w in report.warnings %}<div class="notice warning"><strong>Warning:</strong> {{ w }}</div>{% endfor %}
+</div>
+<div class="btn-row">
+    <a class="btn secondary" href="{{ url_for('main.index') }}">Dashboard</a>
+    <a class="btn secondary" href="{{ url_for('documents.mappings') }}">Field Mapping</a>
+</div>
+{% endblock %}

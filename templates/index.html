@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Internship Logbook Dashboard</h1>
+    <p>Word &harr; JSON automation for your internship training logbook.</p>
+</div>
+
+<div class="card">
+    <strong>Today:</strong> {{ today|pretty_date }} ({{ today_info.day }}) &mdash;
+    {% if today_info.week > 0 %}Week {{ today_info.week }}{% else %}internship has not started{% endif %}
+    &mdash;
+    {% if today_info.working %}<span class="badge ok">Working day</span>{% else %}<span class="badge neutral">{{ today_info.reason }}</span>{% endif %}
+    <div class="muted small">This week is a {{ 6 if today_info.saturday_active else 5 }}-day week
+        ({{ 'Monday&ndash;Saturday'|safe if today_info.saturday_active else 'Monday&ndash;Friday'|safe }}).</div>
+</div>
+
+<div class="stats">
+    <div class="stat"><div class="num">{{ stats.weeks }}</div><div class="lbl">Internship weeks</div></div>
+    <div class="stat"><div class="num">{{ stats.working_days }}</div><div class="lbl">Total working days</div></div>
+    <div class="stat"><div class="num">{{ stats.entries }}</div><div class="lbl">Daily entries</div></div>
+    <div class="stat"><div class="num">{{ stats.weekly_reports }}</div><div class="lbl">Weekly reports</div></div>
+    <div class="stat"><div class="num">{{ stats.json_records }}</div><div class="lbl">JSON records imported</div></div>
+    <div class="stat"><div class="num">{{ stats.generated }}</div><div class="lbl">Documents generated</div></div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h3>Last import</h3>
+        {% if last_import %}
+            Import #{{ last_import.id }} &mdash; {{ last_import.record_count }} record(s)<br>
+            <span class="muted">{{ last_import.date_range or '&ndash;'|safe }} &middot; {{ last_import.status }} &middot; {{ last_import.imported_at|pretty_dt }}</span>
+        {% else %}<span class="muted">No JSON has been imported yet.</span>{% endif %}
+    </div>
+    <div class="card">
+        <h3>Last extraction</h3>
+        {% if last_extract %}
+            Extraction #{{ last_extract.id }} &mdash; {{ last_extract.record_count }} record(s) from {{ last_extract.filename }}<br>
+            <span class="muted">{{ last_extract.date_range or '&ndash;'|safe }} &middot; {{ last_extract.status }} &middot; {{ last_extract.created_at|pretty_dt }}</span>
+        {% else %}<span class="muted">No Word document has been extracted yet.</span>{% endif %}
+    </div>
+</div>
+
+<h2>What would you like to do?</h2>
+<div class="actions">
+    <a class="action-tile" href="{{ url_for('main.daily_entry') }}"><strong>New Daily Entry</strong><span>Type one day's record by hand</span></a>
+    <a class="action-tile" href="{{ url_for('main.weekly_report') }}"><strong>Weekly Report</strong><span>Spread a weekly summary over the working days</span></a>
+    <a class="action-tile" href="{{ url_for('json_routes.import_page') }}"><strong>Import JSON</strong><span>Paste one or many records</span></a>
+    <a class="action-tile" href="{{ url_for('extract.extract_page') }}"><strong>Extract Word Data</strong><span>Word logbook &rarr; JSON / CSV / Excel</span></a>
+    <a class="action-tile" href="{{ url_for('documents.analyzer') }}"><strong>Document Analyzer</strong><span>Upload a template and inspect its tables</span></a>
+    <a class="action-tile" href="{{ url_for('documents.mappings') }}"><strong>Field Mapping</strong><span>Which JSON field goes in which column</span></a>
+    <a class="action-tile" href="{{ url_for('documents.generate_page') }}"><strong>Generate Logbook</strong><span>Fill the Word template from saved entries</span></a>
+    <a class="action-tile" href="{{ url_for('main.history', tab='imports') }}"><strong>Import History</strong><span>Previous JSON imports</span></a>
+    <a class="action-tile" href="{{ url_for('main.history', tab='extractions') }}"><strong>Extraction History</strong><span>Previous Word extractions</span></a>
+</div>
+{% endblock %}

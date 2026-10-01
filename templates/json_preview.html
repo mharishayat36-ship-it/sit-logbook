@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}JSON Preview{% endblock %}
+{% block content %}
+{% set s = validation.summary %}
+<div class="page-head">
+    <h1>JSON validation &amp; preview</h1>
+    <p>{{ s.total }} record(s): <span class="badge ok">{{ s.ok }} valid</span>
+        <span class="badge warning">{{ s.warning }} with warnings</span>
+        <span class="badge error">{{ s.error }} invalid</span></p>
+</div>
+
+{% for g in validation.global %}
+    <div class="notice {{ g.level }}">{{ g.text }}</div>
+{% endfor %}
+
+<div class="card">
+    <h2>JSON Validation</h2>
+    <ul class="vlist">
+    {% for r in validation.results %}
+        <li class="{{ r.status }}">
+            <span class="sym">{{ {'ok': '✓', 'warning': '⚠', 'error': '✗'}[r.status] }}</span>
+            <strong>{{ r.label }}</strong>{% if r.scope %} <span class="badge neutral">{{ r.scope }}</span>{% endif %}
+            &mdash; {{ {'ok': 'Valid', 'warning': 'Valid, with warnings', 'error': 'Invalid'}[r.status] }}
+            {% for m in r.messages %}<span class="msg">{{ {'error': 'Error', 'warning': 'Warning', 'info': 'Note'}[m.level] }}: {{ m.text }}{% if m.level == 'error' and r.status == 'error' %} Record skipped.{% endif %}</span>{% endfor %}
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+
+{% for g in groups %}
+<div class="card">
+    <h2>Preview{% if g.name %} &mdash; table &ldquo;{{ g.name }}&rdquo;{% endif %}</h2>
+    <div class="table-wrap">
+    <table class="data">
+        <thead><tr>{% for f in g.fields %}<th>{{ labels[f] }}</th>{% endfor %}<th>Status</th></tr></thead>
+        <tbody>
+        {% for item in g.rows %}
+            <tr class="{{ 'row-' ~ item.status if item.status != 'ok' }}">
+                {% for f in g.fields %}<td>{{ (item.record[f]|pretty_date) if f == 'date' and item.record[f] else item.record[f] }}</td>{% endfor %}
+                <td><span class="badge {{ item.status }}">{{ {'ok': 'Valid', 'warning': 'Warning', 'error': 'Invalid'}[item.status] }}</span></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endfor %}
+
+{% if s.usable == 0 %}
+    <div class="notice error">No record is valid, so nothing can be inserted. Click <strong>Edit</strong> to correct the JSON.</div>
+    <div class="btn-row">
+        <a class="btn" href="{{ url_for('json_routes.import_page', draft=draft.id) }}">Edit JSON</a>
+    </div>
+{% else %}
+<div class="card">
+    <h2>Confirm</h2>
+    <form method="post" id="confirm-form">
+        {% if s.mismatches %}
+        <div class="notice warning">
+            <strong>Day does not match the date in {{ s.mismatches }} record(s).</strong> What should happen?
+            <div class="radio-list" style="margin-top:.4rem">
+                <label><input type="radio" name="day_policy" value="correct" checked> Correct automatically (use the calculated weekday)</label>
+                <label><input type="radio" name="day_policy" value="keep"> Keep the supplied value</label>
+                <label><input type="radio" name="day_policy" value="cancel"> Cancel import</label>
+            </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="day_policy" value="correct">
+        {% endif %}
+        {% if s.error %}<p class="muted small">{{ s.error }} invalid record(s) will be skipped.</p>{% endif %}
+
+        {% if doc %}
+        <input type="hidden" name="doc_id" value="{{ doc.id }}">
+        <div class="field" style="max-width:420px">
+            <label for="mode">Word insertion mode</label>
+            <select id="mode" name="mode">
+                {% for key, label in modes.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+            </select>
+            <div class="hint">Template: <strong>{{ doc.original_name }}</strong> (never overwritten &ndash; a new file is created).</div>
+        </div>
+        {% endif %}
+
+        <div class="btn-row">
+            <a class="btn secondary" href="{{ url_for('json_routes.preview', draft_id=draft.id) }}">Validate</a>
+            <a class="btn secondary" href="{{ url_for('json_routes.import_page', draft=draft.id) }}">Edit</a>
+            {% if doc %}
+            <button class="btn" type="submit" formaction="{{ url_for('documents.preview_changes', draft_id=draft.id) }}">Insert Into Document &rarr;</button>
+            {% endif %}
+            <button class="btn success" type="submit" formaction="{{ url_for('json_routes.save_to_database', draft_id=draft.id) }}">Save to Database</button>
+            <button class="btn danger" type="submit" formaction="{{ url_for('json_routes.cancel', draft_id=draft.id) }}">Cancel</button>
+        </div>
+    </form>
+    <p class="muted small">The Word document is only changed after a second confirmation on the next page,
+       where you see every cell that will change.</p>
+</div>
+{% endif %}
+{% endblock %}

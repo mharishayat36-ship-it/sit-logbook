@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Extraction Preview{% endblock %}
+{% block content %}
+{% set n_warn = statuses|selectattr('status', 'equalto', 'warning')|list|length + warnings|length %}
+<div class="page-head">
+    <h1>Extraction preview</h1>
+    <p>Source: <strong>{{ meta.filename }}</strong></p>
+</div>
+
+<div class="card">
+    <h2>Extracted records: {{ records|length }}</h2>
+    {% if meta.tables_used %}
+    <p class="muted small">Tables read:
+        {% for t in meta.tables_used %}<strong>{{ t.name }}</strong> ({{ t.rows }} dated rows){{ ', ' if not loop.last }}{% endfor %}.
+        {% if meta.stats.empty_dropped %}{{ meta.stats.empty_dropped }} date-only row(s) skipped.{% endif %}
+    </p>
+    {% endif %}
+    <ul class="vlist">
+    {% for st in statuses %}
+        <li class="{{ st.status }}"><span class="sym">{{ {'ok': '✓', 'warning': '⚠', 'error': '✗'}[st.status] }}</span>{{ st.label|pretty_date }}</li>
+    {% endfor %}
+    </ul>
+    {% if warnings %}
+    <h3>Warnings</h3>
+    <ul class="vlist">
+        {% for w in warnings %}<li class="{{ 'error' if w.level == 'error' else 'warning' }}"><span class="sym">{{ '✗' if w.level == 'error' else '⚠' }}</span>{{ w.text }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+<h2>Edit extracted data</h2>
+{% include "_editable_table.html" %}
+
+<div class="grid grid-2" style="margin-top:1rem">
+    <div class="card">
+        <h3>Export</h3>
+        <div class="btn-row" style="margin-top:0">
+            <button class="btn" type="button" id="copy-json">Copy JSON</button>
+            <a class="btn secondary" href="#" data-export-url="{{ url_for('extract.export', draft_id=draft.id, fmt='json') }}">Download JSON</a>
+            <a class="btn secondary" href="#" data-export-url="{{ url_for('extract.export', draft_id=draft.id, fmt='csv') }}">Download CSV</a>
+            <a class="btn secondary" href="#" data-export-url="{{ url_for('extract.export', draft_id=draft.id, fmt='xlsx') }}">Download Excel</a>
+        </div>
+        <label for="json-view" style="margin-top:.8rem">JSON</label>
+        <textarea id="json-view" class="mono" rows="10" readonly spellcheck="false"></textarea>
+    </div>
+
+    <div class="card">
+        <h3>Use this data</h3>
+        <form method="post" action="{{ url_for('drafts.to_database', draft_id=draft.id) }}" class="needs-save" style="margin-bottom:1rem">
+            <button class="btn success" type="submit">Save to database</button>
+        </form>
+        {% if doc %}
+        <form method="post" action="{{ url_for('documents.preview_changes', draft_id=draft.id) }}" class="needs-save">
+            <input type="hidden" name="doc_id" value="{{ doc.id }}">
+            <div class="field">
+                <label for="mode">Generate Word &ndash; insertion mode</label>
+                <select id="mode" name="mode">
+                    {% for key, label in modes.items() %}<option value="{{ key }}" {{ 'selected' if key == 'add' }}>{{ label }}</option>{% endfor %}
+                </select>
+                <div class="hint">Template: {{ doc.original_name }}</div>
+            </div>
+            <button class="btn" type="submit">Preview Word changes &rarr;</button>
+        </form>
+        <p style="margin-top:1rem"><a href="{{ url_for('extract.round_trip', draft_id=draft.id) }}">Run round-trip validation</a></p>
+        {% else %}
+        <p class="muted">Upload a Word template to generate a document.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/extraction.js') }}"></script>{% endblock %}
