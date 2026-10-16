@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<div class="card">
-    <h1 style="color:var(--ok)">&#10003; {{ title }}</h1>
+<div class="card result-card">
+    <span class="result-icon">{{ icon('check') }}</span>
+    <div class="eyebrow">ONE MORE STEP FORWARD</div>
+    <h1>{{ title }}</h1>
     <p>{{ message }}</p>
     {% if stats %}
     <p class="muted small">Updated rows: {{ stats['update'] }} &middot; added rows: {{ stats.add }} &middot; skipped: {{ stats.skip }} &middot; errors: {{ stats.error }} &middot; already up to date: {{ stats.nochange }}</p>

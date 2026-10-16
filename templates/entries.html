@@ -2,11 +2,14 @@
 {% block title %}Daily Entries{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>Saved daily entries</h1>
-    <p>{{ rows|length }} entr{{ 'y' if rows|length == 1 else 'ies' }} in the database.</p>
+    <div class="eyebrow">YOUR WORK, IN ONE PLACE</div>
+    <h1>Your daily entries</h1>
+    <p>{{ rows|length }} entr{{ 'y' if rows|length == 1 else 'ies' }} recorded. Every day adds to your story.</p>
 </div>
-<div class="btn-row" style="margin-top:0;margin-bottom:.8rem">
-    <a class="btn" href="{{ url_for('main.daily_entry') }}">New entry</a>
+<div class="entries-toolbar">
+    <div class="search-field">{{ icon('search') }}<input type="search" id="entry-search" placeholder="Search tasks, projects, dates..." aria-label="Search saved entries" aria-controls="entries-body"></div>
+<div class="btn-row">
+    <a class="btn" href="{{ url_for('main.daily_entry') }}">{{ icon('plus') }} New entry</a>
     <a class="btn secondary" href="{{ url_for('documents.generate_page') }}">Generate Word logbook</a>
     {% if rows %}
     <a class="btn secondary" href="{{ url_for('main.export_entries', fmt='json') }}">Export JSON</a>
@@ -14,11 +17,13 @@
     <a class="btn secondary" href="{{ url_for('main.export_entries', fmt='xlsx') }}">Export Excel</a>
     {% endif %}
 </div>
+</div>
 {% if rows %}
+<p class="hint"><span id="entry-count" role="status">Showing {{ rows|length }} entries</span> &middot; Scroll across to see details and edit an entry.</p>
 <div class="table-wrap">
-<table class="data">
+<table class="data entry-list">
     <thead><tr><th>Week</th><th>Date</th><th>Day</th><th>In</th><th>Out</th><th>Task</th><th>Project</th><th>Domain</th><th>Tools</th><th>Learning</th><th></th></tr></thead>
-    <tbody>
+    <tbody id="entries-body">
     {% for e in rows %}
         <tr>
             <td>{{ e.week_number }}</td>
@@ -27,6 +32,7 @@
             <td style="white-space:nowrap">
                 <a class="btn sm secondary" href="{{ url_for('main.daily_entry', entry_id=e.id) }}">Edit</a>
                 <form class="inline-form" method="post" action="{{ url_for('main.delete_entry', entry_id=e.id) }}" data-confirm="Delete the entry for {{ e.date|pretty_date }}?">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn sm danger" type="submit">Delete</button>
                 </form>
             </td>
@@ -35,7 +41,8 @@
     </tbody>
 </table>
 </div>
+<div class="empty-state card" id="search-empty" hidden><h3>No matching entries</h3><p>Try a different task, project, or date.</p><button type="button" class="btn secondary" id="clear-search">Clear search</button></div>
 {% else %}
-<div class="card muted">Nothing saved yet. Add a daily entry, import JSON, or distribute a weekly report.</div>
+<div class="card empty-state"><span class="empty-icon">{{ icon('edit') }}</span><h3>A fresh page, just for you</h3><p>Start with one daily entry, import your records,<br>or turn a weekly summary into a full week of progress.</p><a class="btn" href="{{ url_for('main.daily_entry') }}">Write your first entry {{ icon('arrow') }}</a></div>
 {% endif %}
 {% endblock %}

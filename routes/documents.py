@@ -17,6 +17,7 @@ from services.common import FIELDS, FIELD_LABELS
 from services.field_mapper import (DEFAULT_MAPPINGS, auto_detect_mappings, list_mappings,
                                    mappings_match_document, replace_all_mappings)
 from services.word_generator import MODES, apply_plan, build_plan, plan_has_work
+from services.file_storage import reserve_output
 
 bp = Blueprint("documents", __name__)
 
@@ -233,7 +234,11 @@ def _show_plan(draft, form):
     if policy == "cancel":
         flash("Import cancelled.", "info")
         return redirect(url_for("json_routes.import_page"))
-    flat, tables, validation = resolve_draft(draft, policy, doc)
+    try:
+        flat, tables, validation = resolve_draft(draft, policy, doc)
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(back_url(draft))
     if not flat and not tables:
         flash("There are no valid records to insert.", "error")
         return redirect(back_url(draft))
@@ -262,8 +267,15 @@ def confirm_generate(draft_id):
         flash("The working set or template no longer exists.", "error")
         return redirect(url_for("main.index"))
     mode, policy = _read_options(request.form)
+    if policy == "cancel":
+        flash("Import cancelled.", "info")
+        return redirect(back_url(draft))
     schedule = get_schedule()
-    flat, tables, validation = resolve_draft(draft, policy, doc)
+    try:
+        flat, tables, validation = resolve_draft(draft, policy, doc)
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(back_url(draft))
     src = document_path(doc)
     plan = build_plan(src, flat, tables, list_mappings(db_session), mode, schedule.start.year)
     if not plan_has_work(plan):
@@ -271,12 +283,8 @@ def confirm_generate(draft_id):
         return redirect(back_url(draft))
 
     stem = os.path.splitext(secure_filename(doc.original_name) or "Logbook")[0]
-    out_name = f"{stem}_Completed.docx"
-    out_path = os.path.join(current_app.config["GENERATED_FOLDER"], out_name)
-    if os.path.exists(out_path):
-        out_name = f"{stem}_Completed_{timestamp()}.docx"
-        out_path = os.path.join(current_app.config["GENERATED_FOLDER"], out_name)
-    result = apply_plan(src, out_path, plan, schedule.start.year)
+    with reserve_output(current_app.config["GENERATED_FOLDER"], f"{stem}_Completed.docx") as (out_name, output):
+        result = apply_plan(src, output, plan, schedule.start.year)
 
     records = flat + [r for rs in tables.values() for r in rs]
     saved_note = ""

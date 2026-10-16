@@ -12,7 +12,7 @@ from services.document_analyzer import analyze_document
 from services.field_mapper import (build_targets, find_matching_tables, list_mappings,
                                    mapped_fields_of)
 from services.json_processor import parse_json_text
-from services.json_validator import usable_records, validate_parsed
+from services.json_validator import usable_records, validate_parsed, validate_item
 from services.schedule_generator import Schedule
 
 
@@ -92,7 +92,26 @@ def resolve_draft(draft, policy="correct", doc=None):
             return [], {}, None
         flat, tables = usable_records(validation, policy)
         return flat, tables, validation
-    return list(draft.records), {}, None
+    records = validate_saved_records(draft.records, get_schedule(), policy)
+    return records, {}, None
+
+
+def validate_saved_records(records, schedule, policy="correct"):
+    """Validate a complete working set before any persistent side effect."""
+    clean, seen, errors = [], set(), []
+    for raw in records:
+        result = validate_item({"scope": None, "raw": raw}, schedule, seen, schedule.start.year)
+        if result["status"] == "error":
+            errors.extend(f"{result['label']}: {m['text']}" for m in result["messages"]
+                          if m["level"] == "error")
+        elif result["record"]:
+            record = result["record"]
+            if result["day_mismatch"] and policy == "correct":
+                record["day"] = result["day_calc"]
+            clean.append(record)
+    if errors:
+        raise ValueError("Fix the records before continuing. " + " ".join(errors[:5]))
+    return clean
 
 
 # ---------------------------------------------------------------- drafts
@@ -120,6 +139,16 @@ def prune_old_drafts(keep=200):
 # ---------------------------------------------------------------- daily entries
 def upsert_entries(records, schedule, overwrite_blank=False):
     """Insert or merge records into daily_entry by date. Returns (created, updated)."""
+    # Table-specific imports can contain multiple partial records for one date.
+    # Merge before querying: autoflush is disabled, so pending inserts are not
+    # returned by a later SELECT in the same transaction.
+    merged = {}
+    for rec in records:
+        key = rec.get("date")
+        if key:
+            target = merged.setdefault(key, {"date": key})
+            target.update({f: v for f, v in rec.items() if v or overwrite_blank})
+    records = validate_saved_records(list(merged.values()), schedule, policy="keep")
     created = updated = 0
     for rec in records:
         try:

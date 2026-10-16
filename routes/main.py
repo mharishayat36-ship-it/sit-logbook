@@ -8,7 +8,7 @@ from sqlalchemy import func
 
 from models import (DailyEntry, DocumentHistory, JsonImport, WeeklyReport, db_session)
 from services import exporter
-from services.common import FIELDS, long_date
+from services.common import FIELDS, long_date, normalize_time
 from services.json_validator import validate_record_dict
 from services.report_distributor import distribute_week
 from routes.helpers import (active_document, create_draft, entries_as_records, get_draft,
@@ -34,9 +34,18 @@ def index():
     last_import = db_session.query(JsonImport).order_by(JsonImport.id.desc()).first()
     last_extract = db_session.query(DocumentHistory).filter_by(operation="extract") \
         .order_by(DocumentHistory.id.desc()).first()
+    recent_entries = db_session.query(DailyEntry).order_by(DailyEntry.date.desc()).limit(5).all()
+    saved_dates = {d for (d,) in db_session.query(DailyEntry.date).all()}
+    planned = schedule.all_working_days()
+    completed = sum(d in saved_dates for d in planned)
+    current_week = min(max(schedule.week_of(today), 1), schedule.total_weeks)
+    week_days = [dict(schedule.info(d), saved=d in saved_dates, today=d == today)
+                 for d in schedule.working_days(current_week)]
     return render_template("index.html", stats=stats, today_info=schedule.info(today),
                            today=today, last_import=last_import, last_extract=last_extract,
-                           doc=active_document())
+                           doc=active_document(), recent_entries=recent_entries,
+                           completed=completed, completion=round(completed / len(planned) * 100) if planned else 0,
+                           week_days=week_days, current_week=current_week)
 
 
 # ---------------------------------------------------------------- small APIs
@@ -170,6 +179,13 @@ def weekly_report():
         if not form["progress"]:
             flash("Please describe the weekly progress.", "error")
             return render_template("weekly_report.html", values=values, reports=reports, defaults=cfg)
+
+        for field, default in (("check_in", "DEFAULT_CHECK_IN"), ("check_out", "DEFAULT_CHECK_OUT")):
+            normalized, valid = normalize_time(form[field] or cfg[default])
+            if not valid:
+                flash(f"Invalid {field.replace('_', '-')} time. Use a time such as 09:00 AM.", "error")
+                return render_template("weekly_report.html", values=values, reports=reports, defaults=cfg)
+            form[field] = normalized
 
         report = db_session.query(WeeklyReport).filter_by(week_number=week).first() or WeeklyReport(week_number=week)
         report.project, report.weekly_progress = form["project"], form["progress"]

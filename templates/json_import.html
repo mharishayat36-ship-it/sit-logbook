@@ -2,9 +2,11 @@
 {% block title %}Import JSON{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>Import JSON</h1>
+    <div class="eyebrow">BRING YOUR WORK WITH YOU</div>
+    <h1>Import your records</h1>
     <p>Paste one record, an array of records, or table-specific JSON. Nothing is written until you validate, preview and confirm.</p>
 </div>
+<div class="workflow-steps" aria-label="Import steps"><span class="current">01 &nbsp; Add records</span>&rarr;<span>02 &nbsp; Review &amp; validate</span>&rarr;<span>03 &nbsp; Save or generate</span></div>
 
 {% if not doc %}
 <div class="notice warning">No Word template is selected. You can still validate and save to the database; to insert into Word,
@@ -12,6 +14,7 @@
 {% endif %}
 
 <form method="post" class="card" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field">
         <label for="json_text">JSON data</label>
         <textarea id="json_text" name="json_text" class="mono" rows="16" spellcheck="false"

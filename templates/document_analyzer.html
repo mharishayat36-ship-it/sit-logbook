@@ -2,16 +2,19 @@
 {% block title %}Document Analyzer{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>Document Analyzer</h1>
-    <p>Upload your Word logbook template and see every table, column and date column the program found.</p>
+    <div class="eyebrow">DOCUMENT STUDIO</div>
+    <h1>A home for your Word templates</h1>
+    <p>Upload your logbook and explore its tables. Your original document stays safely unchanged.</p>
 </div>
 
 <div class="grid grid-2">
     <form method="post" action="{{ url_for('documents.upload') }}" enctype="multipart/form-data" class="card" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h3>Upload a .docx template</h3>
         <input type="hidden" name="next" value="analyzer">
         <div class="field">
-            <input type="file" name="document" accept=".docx" required>
+            <label for="template-upload">Choose a file or drop it below</label>
+            <input type="file" id="template-upload" name="document" accept=".docx" required>
             <div class="hint">Only .docx files up to 16 MB. The original is kept untouched &ndash; results are always written to a new copy.</div>
         </div>
         <button class="btn" type="submit">Upload &amp; analyze</button>
@@ -27,8 +30,10 @@
                 <a href="{{ url_for('documents.analyzer', doc=d.id) }}"><strong>{{ d.original_name }}</strong></a>
                 <span class="muted small">{{ d.size|filesize }} &middot; {{ d.uploaded_at|pretty_dt }}</span>
                 {% if d.is_active %}<span class="badge ok">active</span>{% else %}
-                <form class="inline-form" method="post" action="{{ url_for('documents.activate', doc_id=d.id) }}"><button class="btn sm secondary" type="submit">Use</button></form>{% endif %}
-                <form class="inline-form" method="post" action="{{ url_for('documents.delete_document', doc_id=d.id) }}" data-confirm="Remove this uploaded file?"><button class="btn sm danger" type="submit">Remove</button></form>
+                <form class="inline-form" method="post" action="{{ url_for('documents.activate', doc_id=d.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn sm secondary" type="submit">Use</button></form>{% endif %}
+                <form class="inline-form" method="post" action="{{ url_for('documents.delete_document', doc_id=d.id) }}" data-confirm="Remove this uploaded file?">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn sm danger" type="submit">Remove</button></form>
             </li>
             {% endfor %}
         </ul>

@@ -34,7 +34,7 @@ def main():
     app = create_app({
         "DATABASE_URI": "sqlite:///" + os.path.join(tmp, "test.db").replace("\\", "/"),
         "UPLOAD_FOLDER": os.path.join(tmp, "uploads"), "GENERATED_FOLDER": os.path.join(tmp, "generated"),
-        "EXPORT_FOLDER": os.path.join(tmp, "exports"), "TESTING": True, "SECRET_KEY": "test"})
+        "EXPORT_FOLDER": os.path.join(tmp, "exports"), "TESTING": True, "SECRET_KEY": "test", "CSRF_ENABLED": False})
     c = app.test_client()
 
     # ---- every page loads
@@ -44,7 +44,7 @@ def main():
     check("404 page", c.get("/nope").status_code == 404)
 
     # ---- upload
-    sample = create_sample_template.build()
+    sample = create_sample_template.build(output_file=os.path.join(tmp, "sample.docx"))
     sample_hash = sha(sample)
     r = c.post("/documents/upload", data={"document": (open(sample, "rb"), "My Logbook.docx"), "next": "analyzer"},
                content_type="multipart/form-data", follow_redirects=True)

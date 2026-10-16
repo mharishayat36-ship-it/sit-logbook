@@ -2,14 +2,18 @@
 {% block title %}Daily Entry{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>{{ 'Edit daily entry' if entry else 'New daily entry' }}</h1>
-    <p>The date is the main key. The day name and week number are calculated for you.</p>
+    <div class="eyebrow">A LITTLE PROGRESS, EVERY DAY</div>
+    <h1>{{ 'Refine your daily entry' if entry else 'What did you work on today?' }}</h1>
+    <p>Capture the work, the small wins, and the things you learned along the way.</p>
 </div>
 
-<form method="post" class="card">
+<div class="form-layout">
+<form method="post" class="card" data-once data-dirty-guard>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2 class="form-section-title"><span class="section-number">01</span> The essentials</h2>
     <div class="row">
         <div class="field">
-            <label for="date">Date *</label>
+            <label for="date">Date <span class="muted">(required)</span></label>
             <input type="date" id="date" name="date" value="{{ values.date }}" required>
             <div id="date-info" class="hint"></div>
         </div>
@@ -26,26 +30,34 @@
             <input type="text" id="check_out" name="check_out" value="{{ values.check_out }}" placeholder="05:00 PM">
         </div>
     </div>
+    <div class="form-section">
+    <h2 class="form-section-title"><span class="section-number">02</span> Your work</h2>
     <div class="field">
-        <label for="task">Task</label>
-        <textarea id="task" name="task" rows="3">{{ values.task }}</textarea>
+        <label for="task">What did you accomplish?</label>
+        <textarea id="task" name="task" rows="4" placeholder="Describe a task, a problem you solved, or a milestone you reached...">{{ values.task }}</textarea>
     </div>
     <div class="row">
-        <div class="field"><label for="project">Project</label><input type="text" id="project" name="project" value="{{ values.project }}"></div>
-        <div class="field"><label for="domain">Domain</label><input type="text" id="domain" name="domain" value="{{ values.domain }}"></div>
-        <div class="field"><label for="tools">Tools</label><input type="text" id="tools" name="tools" value="{{ values.tools }}"></div>
+        <div class="field"><label for="project">Project</label><input type="text" id="project" name="project" value="{{ values.project }}" placeholder="What are you building?"></div>
+        <div class="field"><label for="domain">Domain</label><input type="text" id="domain" name="domain" value="{{ values.domain }}" placeholder="e.g. UI development"></div>
+        <div class="field"><label for="tools">Tools</label><input type="text" id="tools" name="tools" value="{{ values.tools }}" placeholder="e.g. Unity, C#, Git"></div>
+    </div>
+    </div>
+    <div class="form-section">
+    <h2 class="form-section-title"><span class="section-number">03</span> Take a moment to reflect</h2>
+    <div class="field">
+        <label for="learning">What did you learn?</label>
+        <textarea id="learning" name="learning" rows="3" placeholder="A new skill, a useful insight, or something to try differently next time...">{{ values.learning }}</textarea>
     </div>
     <div class="field">
-        <label for="learning">Learning</label>
-        <textarea id="learning" name="learning" rows="3">{{ values.learning }}</textarea>
+        <label for="notes">Anything else? <span class="muted">(optional)</span></label>
+        <textarea id="notes" name="notes" rows="2" placeholder="Reminders or ideas for tomorrow">{{ values.notes }}</textarea>
     </div>
-    <div class="field">
-        <label for="notes">Notes</label>
-        <textarea id="notes" name="notes" rows="2">{{ values.notes }}</textarea>
     </div>
-    <div class="btn-row">
-        <button class="btn" type="submit">Save entry</button>
+    <div class="form-footer"><span class="hint">Only the date is required.</span><div class="btn-row">
         <a class="btn secondary" href="{{ url_for('main.entries') }}">Cancel</a>
-    </div>
+        <button class="btn" type="submit">{{ icon('check') }} Save entry</button>
+    </div></div>
 </form>
+<aside class="form-aside"><div class="card"><span class="action-icon teal">{{ icon('spark') }}</span><h3>Make it meaningful</h3><p>A useful entry tells a small story.</p><ul><li>Be specific about what you worked on.</li><li>Include the tools and skills you used.</li><li>Write one thing you learned, even on a quiet day.</li></ul><p>Your weekday and internship week are worked out from the date.</p></div><a class="text-link" href="{{ url_for('main.weekly_report') }}">Have a whole week to add? {{ icon('arrow') }}</a></aside>
+</div>
 {% endblock %}

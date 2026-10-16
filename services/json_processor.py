@@ -44,7 +44,7 @@ def parse_json_text(text: str, max_chars: int = 2_000_000) -> dict:
             data = json.loads(_clean_for_retry(text))
             out["notes"].append("The JSON had small formatting problems (quotes, commas or "
                                 "code fences) that were fixed automatically.")
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, RecursionError):
             out["error"] = first_error
             return out
     except RecursionError:

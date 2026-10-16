@@ -67,7 +67,11 @@ def save_to_database(draft_id):
     if policy == "cancel":
         flash("Import cancelled.", "info")
         return redirect(url_for("json_routes.import_page"))
-    flat, tables, validation = resolve_draft(draft, policy, active_document())
+    try:
+        flat, tables, validation = resolve_draft(draft, policy, active_document())
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("json_routes.import_page"))
     records = flat + [r for rs in tables.values() for r in rs]
     if not records:
         flash("There are no valid records to save.", "error")

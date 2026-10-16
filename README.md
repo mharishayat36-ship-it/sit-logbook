@@ -255,7 +255,7 @@ logbook_automation/
 
 Only `.docx` is accepted and the file must really be a valid Word package · 16 MB upload limit · filenames sanitised and stored under a random prefix · files stored only in `uploads/`, `generated/`, `exports/` · uploaded files are never executed or overwritten · downloads are restricted to those folders · all HTML output is escaped (Jinja2) · malformed JSON is handled with clear messages.
 
-The server listens on `127.0.0.1` only (your own computer). Don't expose it to a network without adding login and CSRF protection. Set `LOGBOOK_SECRET_KEY` as an environment variable for a private session key.
+The server listens on `127.0.0.1` only (your own computer). POST forms and JSON editing requests require a session CSRF token. Don't expose it to a network without adding authentication and configuring production hosting. Set `LOGBOOK_SECRET_KEY` as an environment variable for a stable private session key; otherwise a random key is generated at startup and open forms must be refreshed after a restart. CSV exports prefix formula-like text with an apostrophe; Excel exports store all record values as text.
 
 ---
 
@@ -276,3 +276,27 @@ The server listens on `127.0.0.1` only (your own computer). Don't expose it to a
 | `ImportError: DLL load failed ... filename or extension is too long` | Move the project to a shorter path such as `C:\logbook_automation` and recreate the `venv`. |
 | *No Word table matches the field mappings* | Open **Field Mapping** → **Auto-detect mappings**. |
 | Port 5000 already in use | Close the other program, or change `port=5000` at the bottom of `app.py`. |
+
+## 11. Redesigned workspace and verification
+
+The light workspace uses a dark sidebar and teal accents throughout the dashboard, forms, document tools, previews, and history. The dashboard shows recorded working-day progress, recent entries, and calendar shortcuts. Entries can be searched instantly. Mobile navigation supports the keyboard and Escape, and animations respect reduced-motion preferences.
+
+Editable previews show normalized times and corrected weekdays after saving. Invalid drafts are rejected before database saves and Word generation. Table-specific records sharing a date are merged, and generated/exported files are created exclusively so repeated requests cannot overwrite earlier output.
+
+Run the application with `venv\Scripts\python.exe app.py` and open `http://127.0.0.1:5000`. Restart an already-running server after updating the Python files.
+
+Tests use isolated databases and temporary documents:
+
+```powershell
+venv\Scripts\python.exe selftest.py
+venv\Scripts\python.exe test_regressions.py
+```
+
+For optional browser verification, install the development dependencies and use the installed Microsoft Edge browser:
+
+```powershell
+venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+venv\Scripts\python.exe browser_check.py
+```
+
+The browser check exercises data entry, search, weekly editing, upload, generation, JSON import, extraction, responsive layouts, and mobile navigation. It saves review screenshots under `.qa/` and shuts down its temporary server when finished. Playwright is only a development dependency; the application itself requires no browser automation tools or Node.js.

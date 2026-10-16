@@ -1,7 +1,8 @@
 {# Editable records table shared by the weekly preview and the extraction preview.
    Expects: records (list of dict), statuses (optional list), draft. #}
 {% set long_fields = ['task', 'learning', 'notes', 'tools'] %}
-<div id="editor" data-save-url="{{ url_for('drafts.save_draft', draft_id=draft.id) }}">
+<div id="editor" data-save-url="{{ url_for('drafts.save_draft', draft_id=draft.id) }}" aria-busy="false">
+    <p class="hint">Edit any cell, then save your changes. Scroll across the table to see all fields.</p>
     <div class="table-wrap">
         <table class="data edit" id="records-table">
             <thead>
@@ -21,12 +22,12 @@
                     </td>
                     {% for f in FIELDS %}
                     <td class="col-{{ f }}">
-                        {% if f == 'date' %}<input type="date" data-field="date" value="{{ rec.get('date', '') }}">
-                        {% elif f in long_fields %}<textarea data-field="{{ f }}" rows="2">{{ rec.get(f, '') }}</textarea>
-                        {% else %}<input type="text" data-field="{{ f }}" value="{{ rec.get(f, '') }}">{% endif %}
+                        {% if f == 'date' %}<input type="date" aria-label="Date" data-field="date" value="{{ rec.get('date', '') }}">
+                        {% elif f in long_fields %}<textarea aria-label="{{ FIELD_LABELS[f] }}" data-field="{{ f }}" rows="2">{{ rec.get(f, '') }}</textarea>
+                        {% else %}<input type="text" aria-label="{{ FIELD_LABELS[f] }}" data-field="{{ f }}" value="{{ rec.get(f, '') }}">{% endif %}
                     </td>
                     {% endfor %}
-                    <td><button type="button" class="btn sm danger delete-row" title="Delete this record">&#10005;</button></td>
+                    <td><button type="button" class="btn sm danger delete-row" title="Delete this record" aria-label="Delete this record">&#10005;</button></td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -38,19 +39,19 @@
             <td class="status-cell"><span class="badge neutral">New</span><div class="small muted msg-cell"></div></td>
             {% for f in FIELDS %}
             <td class="col-{{ f }}">
-                {% if f == 'date' %}<input type="date" data-field="date">
-                {% elif f in long_fields %}<textarea data-field="{{ f }}" rows="2"></textarea>
-                {% else %}<input type="text" data-field="{{ f }}">{% endif %}
+                {% if f == 'date' %}<input type="date" aria-label="Date" data-field="date">
+                {% elif f in long_fields %}<textarea aria-label="{{ FIELD_LABELS[f] }}" data-field="{{ f }}" rows="2"></textarea>
+                {% else %}<input type="text" aria-label="{{ FIELD_LABELS[f] }}" data-field="{{ f }}">{% endif %}
             </td>
             {% endfor %}
-            <td><button type="button" class="btn sm danger delete-row" title="Delete this record">&#10005;</button></td>
+            <td><button type="button" class="btn sm danger delete-row" title="Delete this record" aria-label="Delete this record">&#10005;</button></td>
         </tr>
     </template>
 
     <div class="btn-row">
         <button type="button" class="btn secondary" id="add-row">+ Add record</button>
         <button type="button" class="btn" id="save-changes">Save changes</button>
-        <span id="save-state" class="muted small"></span>
+        <span id="save-state" class="muted small" role="status" aria-live="polite">All changes saved</span>
     </div>
-    <div id="editor-errors"></div>
+    <div id="editor-errors" role="alert"></div>
 </div>

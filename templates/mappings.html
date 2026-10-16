@@ -2,11 +2,13 @@
 {% block title %}Field Mapping{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>Field mapping</h1>
-    <p>Tell the program which JSON field belongs in which Word table and column. Mappings are stored in the database.</p>
+    <div class="eyebrow">EVERY DETAIL IN THE RIGHT PLACE</div>
+    <h1>Connect your fields</h1>
+    <p>Choose where each piece of your daily entry belongs in your Word template. Start with auto-detect, then fine-tune.</p>
 </div>
 
 <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <datalist id="table-names">
         {% if analysis %}{% for t in analysis.tables %}<option value="{{ t.name }}">{% endfor %}{% endif %}
         <option value="Attendance"><option value="Daily Progress">
@@ -55,6 +57,7 @@
         {% if analysis %}
         <p class="muted small">Reads the column headers of <strong>{{ doc.original_name }}</strong> and replaces the mappings above.</p>
         <form method="post" action="{{ url_for('documents.mappings_auto') }}" data-confirm="Replace all current mappings with the detected ones?">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="btn secondary" type="submit">Auto-detect mappings</button>
         </form>
         {% else %}<p class="muted">Upload a document first (Document Analyzer page).</p>{% endif %}
@@ -63,6 +66,7 @@
         <h3>Reset to defaults</h3>
         <p class="muted small">Restores the standard Attendance and Daily Progress mappings.</p>
         <form method="post" action="{{ url_for('documents.mappings_reset') }}" data-confirm="Replace all current mappings with the defaults?">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="btn danger" type="submit">Reset mappings</button>
         </form>
     </div>

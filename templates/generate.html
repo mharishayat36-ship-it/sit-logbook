@@ -2,9 +2,11 @@
 {% block title %}Generate Logbook{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>Generate logbook</h1>
-    <p>Fill a copy of your Word template with the daily entries saved in the database.</p>
+    <div class="eyebrow">READY FOR THE NEXT CHAPTER</div>
+    <h1>Bring your logbook together</h1>
+    <p>Your saved entries, neatly placed into your Word template. Preview every change before creating your document.</p>
 </div>
+<div class="workflow-steps" aria-label="Generation steps"><span class="current">01 &nbsp; Choose &amp; configure</span>&rarr;<span>02 &nbsp; Preview changes</span>&rarr;<span>03 &nbsp; Download Word file</span></div>
 
 {% if not docs %}
 <div class="notice warning">No template uploaded yet. <a href="{{ url_for('documents.analyzer') }}">Upload a .docx first.</a></div>
@@ -12,6 +14,7 @@
 <div class="notice warning">The database has no daily entries yet. Add entries, <a href="{{ url_for('json_routes.import_page') }}">import JSON</a> or use the <a href="{{ url_for('main.weekly_report') }}">weekly report</a>.</div>
 {% else %}
 <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <p>{{ count }} saved entr{{ 'y' if count == 1 else 'ies' }} available.</p>
     <div class="row">
         <div class="field">

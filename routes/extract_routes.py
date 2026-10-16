@@ -16,6 +16,7 @@ from services.common import FIELDS, FIELD_LABELS, long_date
 from services.document_extractor import extract_records
 from services.field_mapper import build_targets
 from services.json_validator import validate_item
+from services.file_storage import reserve_output
 from services.round_trip_validator import run_round_trip
 
 bp = Blueprint("extract", __name__)
@@ -30,19 +31,18 @@ def send_export(records, fmt, basename):
         flash("Unknown export format.", "error")
         return redirect(url_for("main.index"))
     name = f"{secure_filename(basename) or 'logbook'}_{timestamp()}.{fmt}"
-    path = os.path.join(current_app.config["EXPORT_FOLDER"], name)
     if fmt == "json":
-        with open(path, "w", encoding="utf-8") as fh:
-            fh.write(exporter.to_json(records))
+        content = exporter.to_json(records).encode("utf-8")
         mime = "application/json"
     elif fmt == "csv":
-        with open(path, "w", encoding="utf-8-sig", newline="") as fh:  # BOM so Excel reads UTF-8
-            fh.write(exporter.to_csv(records))
+        content = exporter.to_csv(records).encode("utf-8-sig")
         mime = "text/csv"
     else:
-        with open(path, "wb") as fh:
-            fh.write(exporter.to_xlsx_bytes(records))
+        content = exporter.to_xlsx_bytes(records)
         mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    with reserve_output(current_app.config["EXPORT_FOLDER"], name) as (name, output):
+        output.write(content)
+    path = os.path.join(current_app.config["EXPORT_FOLDER"], name)
     return send_file(path, mimetype=mime, as_attachment=True, download_name=name)
 
 
@@ -166,7 +166,12 @@ def to_database(draft_id):
     if draft is None:
         flash("That working set no longer exists.", "error")
         return redirect(url_for("main.index"))
-    created, updated = upsert_entries(draft.records, get_schedule())
+    try:
+        created, updated = upsert_entries(draft.records, get_schedule())
+    except ValueError as exc:
+        flash(str(exc), "error")
+        target = {"extract": "extract.preview", "weekly": "main.weekly_preview"}.get(draft.kind)
+        return redirect(url_for(target, draft_id=draft.id) if target else url_for("main.entries"))
     flash(f"Saved to database: {created} new and {updated} updated daily entries.", "success")
     target = {"extract": "extract.preview", "weekly": "main.weekly_preview"}.get(draft.kind)
     return redirect(url_for(target, draft_id=draft.id) if target else url_for("main.entries"))
@@ -181,7 +186,12 @@ def round_trip(draft_id):
     if draft is None or doc is None:
         flash("A working set and a Word template are both needed for the round-trip check.", "error")
         return redirect(url_for("main.index"))
-    flat, tables, _ = resolve_draft(draft, request.args.get("day_policy", "correct"), doc)
+    try:
+        flat, tables, _ = resolve_draft(draft, request.args.get("day_policy", "correct"), doc)
+    except ValueError as exc:
+        from routes.documents import back_url
+        flash(str(exc), "error")
+        return redirect(back_url(draft))
     report = run_round_trip(document_path(doc), flat, tables, list_mappings(db_session),
                             get_schedule().start.year)
     log_history(doc.original_name, "round-trip", report["records"],

@@ -3,8 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light dark">
+    <meta name="color-scheme" content="light">
+    <meta name="theme-color" content="#102e2d">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="Your internship, thoughtfully documented. Organize daily work, build weekly reports, and create your Word logbook.">
     <title>{% block title %}Dashboard{% endblock %} - Logbook Automation</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -23,59 +27,69 @@
 {%- elif name == 'file' %}<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>
 {%- elif name == 'list' %}<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
 {%- elif name == 'clock' %}<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+{%- elif name == 'plus' %}<path d="M12 5v14M5 12h14"/>
+{%- elif name == 'arrow' %}<path d="M5 12h14M13 6l6 6-6 6"/>
+{%- elif name == 'check' %}<path d="M5 12l4 4L19 6"/>
+{%- elif name == 'upload' %}<path d="M12 16V3M7 8l5-5 5 5M4 16v5h16v-5"/>
+{%- elif name == 'spark' %}<path d="M12 3l2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4z"/>
 {%- endif -%}
 </svg>
 {%- endmacro %}
 
-<input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
+<a class="skip-link" href="#main-content">Skip to content</a>
 <div class="shell">
-    <aside class="sidebar" aria-label="Main navigation">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
         <a class="brand" href="{{ url_for('main.index') }}">
             <span class="brand-mark">{{ icon('file') }}</span>
-            <span class="brand-text">Logbook<small>Automation</small></span>
+            <span class="brand-text">logbook<span class="brand-dot">.</span><small>Internship workspace</small></span>
         </a>
         <nav class="nav">
             <a href="{{ url_for('main.index') }}" class="{{ 'active' if ep == 'main.index' }}">{{ icon('home') }}<span>Dashboard</span></a>
 
-            <div class="nav-group">Create</div>
+            <div class="nav-group">Your workspace</div>
             <a href="{{ url_for('main.daily_entry') }}" class="{{ 'active' if ep == 'main.daily_entry' }}">{{ icon('edit') }}<span>Daily Entry</span></a>
             <a href="{{ url_for('main.weekly_report') }}" class="{{ 'active' if ep.startswith('main.weekly') }}">{{ icon('calendar') }}<span>Weekly Report</span></a>
             <a href="{{ url_for('json_routes.import_page') }}" class="{{ 'active' if ep.startswith('json_routes') }}">{{ icon('braces') }}<span>Import JSON</span></a>
 
-            <div class="nav-group">Word document</div>
-            <a href="{{ url_for('documents.analyzer') }}" class="{{ 'active' if ep == 'documents.analyzer' }}">{{ icon('search') }}<span>Analyzer</span></a>
+            <div class="nav-group">Document studio</div>
+            <a href="{{ url_for('documents.analyzer') }}" class="{{ 'active' if ep == 'documents.analyzer' }}">{{ icon('search') }}<span>Templates &amp; analyzer</span></a>
             <a href="{{ url_for('documents.mappings') }}" class="{{ 'active' if ep == 'documents.mappings' }}">{{ icon('link') }}<span>Field Mapping</span></a>
             <a href="{{ url_for('extract.extract_page') }}" class="{{ 'active' if ep.startswith('extract') }}">{{ icon('download') }}<span>Extract Word</span></a>
             <a href="{{ url_for('documents.generate_page') }}" class="{{ 'active' if ep == 'documents.generate_page' or ep.startswith('documents.preview') or ep.startswith('documents.confirm') }}">{{ icon('file') }}<span>Generate</span></a>
 
             <div class="nav-group">Records</div>
-            <a href="{{ url_for('main.entries') }}" class="{{ 'active' if ep == 'main.entries' }}">{{ icon('list') }}<span>Entries</span></a>
+            <a href="{{ url_for('main.entries') }}" class="{{ 'active' if ep == 'main.entries' }}">{{ icon('list') }}<span>All entries</span></a>
             <a href="{{ url_for('main.history') }}" class="{{ 'active' if ep == 'main.history' }}">{{ icon('clock') }}<span>History</span></a>
         </nav>
         <div class="sidebar-foot">
+            <div class="sidebar-note">A little progress.<br><strong>A well-documented journey.</strong></div>
             <div class="tpl-label">Active template</div>
             {% if active_doc %}
                 <div class="tpl-name" title="{{ active_doc.original_name }}"><span class="status-dot ok"></span>{{ active_doc.original_name }}</div>
             {% else %}
-                <a class="tpl-none" href="{{ url_for('documents.analyzer') }}">None &ndash; upload a .docx</a>
+                <a class="tpl-none" href="{{ url_for('documents.analyzer') }}">{{ icon('plus') }} Add your Word template</a>
             {% endif %}
         </div>
     </aside>
 
     <div class="main-col">
-        <header class="mobilebar">
-            <label for="nav-toggle" class="burger" aria-label="Toggle menu"><span></span><span></span><span></span></label>
-            <a class="brand-compact" href="{{ url_for('main.index') }}">Logbook Automation</a>
+        <header class="topbar">
+            <div class="topbar-start">
+                <button type="button" class="burger" id="menu-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><span></span><span></span><span></span></button>
+                <span class="breadcrumb">Workspace <span>/</span> <strong>{{ self.title() }}</strong></span>
+            </div>
+            <div class="topbar-end"><span class="local-status"><span class="status-dot ok"></span>Local workspace</span><a class="avatar" href="{{ url_for('main.index') }}" aria-label="Workspace home">LB</a></div>
         </header>
-        <label for="nav-toggle" class="scrim" aria-hidden="true"></label>
+        <button type="button" class="scrim" tabindex="-1" aria-label="Close navigation"></button>
 
-        <main class="container">
+        <main class="container" id="main-content" tabindex="-1">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% for category, message in messages %}
-                    <div class="flash {{ category }}"><span>{{ message }}</span><button type="button" class="flash-close" aria-label="Dismiss">&times;</button></div>
+                    <div class="flash {{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}"><span>{{ message }}</span><button type="button" class="flash-close" aria-label="Dismiss">&times;</button></div>
                 {% endfor %}
             {% endwith %}
             {% block content %}{% endblock %}
+            <footer class="workspace-footer"><span>logbook. <span class="muted">Made for your next chapter.</span></span><span>Your progress, in one place.</span></footer>
         </main>
     </div>
 </div>

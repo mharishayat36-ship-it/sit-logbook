@@ -2,6 +2,7 @@
 {% block title %}Preview Changes{% endblock %}
 {% block content %}
 <div class="page-head">
+    <div class="eyebrow">A FINAL LOOK BEFORE YOU CREATE</div>
     <h1>Preview of changes</h1>
     <p>Template: <strong>{{ doc.original_name }}</strong> &middot; mode: <strong>{{ plan.mode_label }}</strong> &middot; {{ record_count }} date(s).
        Nothing has been written yet.</p>
@@ -49,6 +50,7 @@
 <div class="card">
     {% if has_work %}
     <form method="post" action="{{ url_for('documents.confirm_generate', draft_id=draft.id) }}" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="doc_id" value="{{ doc.id }}">
         <input type="hidden" name="mode" value="{{ mode }}">
         <input type="hidden" name="day_policy" value="{{ policy }}">

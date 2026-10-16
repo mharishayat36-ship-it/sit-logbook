@@ -2,14 +2,17 @@
 {% block title %}Extract Word Data{% endblock %}
 {% block content %}
 <div class="page-head">
-    <h1>Extract data from a Word logbook</h1>
-    <p>Upload → analyse tables → map fields → extract → combine tables by date → preview &amp; edit → export.</p>
+    <div class="eyebrow">FROM DOCUMENT TO DAILY RECORDS</div>
+    <h1>Give your Word logbook a new life</h1>
+    <p>Extract your entries, make adjustments, and take your data wherever you need it.</p>
 </div>
+<div class="workflow-steps" aria-label="Extraction steps"><span class="current">01 &nbsp; Choose document</span>&rarr;<span>02 &nbsp; Review records</span>&rarr;<span>03 &nbsp; Save &amp; export</span></div>
 
 <div class="grid grid-2">
     <div class="card">
         <h3>1. Choose the Word document</h3>
         <form method="post" action="{{ url_for('documents.upload') }}" enctype="multipart/form-data" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="extract">
             <div class="field">
                 <label for="document">Upload a .docx file</label>
@@ -55,6 +58,7 @@
 
 {% if doc and analysis and targets %}
 <form method="post" action="{{ url_for('extract.run_extract') }}" class="card" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <h3>3. Extract</h3>
     <input type="hidden" name="doc_id" value="{{ doc.id }}">
     <div class="inline">

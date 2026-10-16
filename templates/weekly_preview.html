@@ -13,6 +13,7 @@
         <h3>Save to database</h3>
         <p class="muted small">Stores these entries (existing dates are updated).</p>
         <form method="post" action="{{ url_for('drafts.to_database', draft_id=draft.id) }}" class="needs-save">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="btn success" type="submit">Save to database</button>
         </form>
     </div>
@@ -20,6 +21,7 @@
         <h3>Generate Word</h3>
         {% if doc %}
         <form method="post" action="{{ url_for('documents.preview_changes', draft_id=draft.id) }}" class="needs-save">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="doc_id" value="{{ doc.id }}">
             <div class="field">
                 <label for="mode">Insertion mode</label>

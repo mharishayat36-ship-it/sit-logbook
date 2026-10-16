@@ -35,8 +35,9 @@ def small(table):
                     r.font.size = Pt(9)
 
 
-def build(weeks=4):
-    os.makedirs(OUT_DIR, exist_ok=True)
+def build(weeks=4, output_file=None):
+    destination = output_file or OUT_FILE
+    os.makedirs(os.path.dirname(os.path.abspath(destination)), exist_ok=True)
     schedule = Schedule()
     days = [d for w in range(1, weeks + 1) for d in schedule.working_days(w)]
 
@@ -69,8 +70,8 @@ def build(weeks=4):
     style_header(t2.rows[0])
     small(t2)
 
-    doc.save(OUT_FILE)
-    return OUT_FILE
+    doc.save(destination)
+    return destination
 
 
 if __name__ == "__main__":

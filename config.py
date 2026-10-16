@@ -1,5 +1,6 @@
 """Application configuration. Edit the values below to suit your internship."""
 import os
+import secrets
 from datetime import date
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -7,7 +8,10 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     # Used to sign flash messages. Set LOGBOOK_SECRET_KEY in your environment for real use.
-    SECRET_KEY = os.environ.get("LOGBOOK_SECRET_KEY", "dev-secret-change-me")
+    SECRET_KEY = os.environ.get("LOGBOOK_SECRET_KEY") or secrets.token_hex(32)
+    CSRF_ENABLED = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
 
     # Database (SQLite file in the project folder)
     DATABASE_PATH = os.path.join(BASE_DIR, "database.db")

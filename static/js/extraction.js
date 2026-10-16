@@ -8,6 +8,7 @@
     var errorBox = document.getElementById("editor-errors");
     var jsonView = document.getElementById("json-view");
     var dirty = false;
+    var pendingSave = null;
 
     var FIELDS = ["date", "day", "check_in", "check_out", "task", "project", "domain", "tools", "learning", "notes"];
     var EXPORT_FIELDS = FIELDS.slice(0, 9);
@@ -82,17 +83,33 @@
 
     // Returns a promise that resolves true when the server accepted the data.
     function save() {
+        if (pendingSave) { return pendingSave; }
         errorBox.innerHTML = "";
         saveState.textContent = "Saving...";
-        return fetch(saveUrl, {
+        editor.setAttribute("aria-busy", "true");
+        var records = collect();
+        var controls = editor.querySelectorAll("input, textarea, button");
+        controls.forEach(function (control) { control.disabled = true; });
+        pendingSave = fetch(saveUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ records: collect() })
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content },
+            body: JSON.stringify({ records: records })
         }).then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
           .then(function (res) {
             if (res.data.rows) { showRows(res.data.rows); }
             if (res.ok && res.data.ok) {
+                // Display the canonical values returned by the server, including
+                // corrected weekdays and normalized times, before copying JSON.
+                var trs = body.querySelectorAll("tr");
+                res.data.rows.forEach(function (row, i) {
+                    if (trs[i] && row.record) {
+                        trs[i].querySelectorAll("[data-field]").forEach(function (el) {
+                            el.value = row.record[el.getAttribute("data-field")] || "";
+                        });
+                    }
+                });
                 dirty = false;
+                refreshView();
                 saveState.textContent = "Saved (" + res.data.count + " records)";
                 saveState.style.color = "#1c7c4a";
                 return true;
@@ -110,7 +127,12 @@
             div.textContent = "Could not reach the server.";
             errorBox.appendChild(div);
             return false;
+        }).finally(function () {
+            pendingSave = null;
+            editor.setAttribute("aria-busy", "false");
+            controls.forEach(function (control) { control.disabled = false; });
         });
+        return pendingSave;
     }
 
     document.getElementById("save-changes").addEventListener("click", save);
@@ -125,9 +147,14 @@
     });
     document.querySelectorAll("form.needs-save").forEach(function (form) {
         form.addEventListener("submit", function (event) {
-            if (!dirty) { return; }
+            if (form.dataset.waiting) { event.preventDefault(); return; }
+            if (!dirty && !pendingSave) { return; }
             event.preventDefault();
-            save().then(function (ok) { if (ok) { dirty = false; form.submit(); } });
+            form.dataset.waiting = "true";
+            save().then(function (ok) {
+                delete form.dataset.waiting;
+                if (ok) { form.requestSubmit(); }
+            });
         });
     });
 
@@ -137,7 +164,10 @@
             var text = exportJson();
             var done = function () { copyBtn.textContent = "Copied!"; setTimeout(function () { copyBtn.textContent = "Copy JSON"; }, 1500); };
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(done);
+                navigator.clipboard.writeText(text).then(done).catch(function () {
+                    saveState.textContent = "Clipboard unavailable. Select and copy the JSON below.";
+                    if (jsonView) { jsonView.focus(); jsonView.select(); }
+                });
             } else {
                 refreshView(); jsonView.select(); document.execCommand("copy"); done();
             }
@@ -151,6 +181,7 @@
             a.href = URL.createObjectURL(blob);
             a.download = "logbook_records.json";
             document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
         });
     }
 

@@ -47,10 +47,12 @@
     <div class="card">
         <h3>Use this data</h3>
         <form method="post" action="{{ url_for('drafts.to_database', draft_id=draft.id) }}" class="needs-save" style="margin-bottom:1rem">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="btn success" type="submit">Save to database</button>
         </form>
         {% if doc %}
         <form method="post" action="{{ url_for('documents.preview_changes', draft_id=draft.id) }}" class="needs-save">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="doc_id" value="{{ doc.id }}">
             <div class="field">
                 <label for="mode">Generate Word &ndash; insertion mode</label>

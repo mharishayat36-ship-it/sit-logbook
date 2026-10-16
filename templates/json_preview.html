@@ -55,6 +55,7 @@
 <div class="card">
     <h2>Confirm</h2>
     <form method="post" id="confirm-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if s.mismatches %}
         <div class="notice warning">
             <strong>Day does not match the date in {{ s.mismatches }} record(s).</strong> What should happen?

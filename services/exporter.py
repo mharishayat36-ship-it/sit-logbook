@@ -29,7 +29,10 @@ def to_csv(records) -> str:
     writer = csv.DictWriter(buf, fieldnames=fields, lineterminator="\r\n")
     writer.writeheader()
     for r in clean_records(records):
-        writer.writerow(r)
+        # Spreadsheet applications evaluate these prefixes even in CSV files.
+        writer.writerow({k: ("'" + v if v.lstrip().startswith(("=", "+", "-", "@"))
+                              or v.startswith(("\t", "\r", "\n")) else v)
+                         for k, v in r.items()})
     return buf.getvalue()
 
 
@@ -46,6 +49,8 @@ def to_xlsx_bytes(records) -> bytes:
         cell.fill = PatternFill("solid", fgColor="2F5D8A")
     for r in clean_records(records):
         ws.append([r[f] for f in fields])
+        for cell in ws[ws.max_row]:
+            cell.data_type = "s"  # A logbook contains text, never executable formulas.
     widths = {"date": 12, "day": 12, "check_in": 11, "check_out": 11, "task": 48, "project": 22,
               "domain": 22, "tools": 24, "learning": 48, "notes": 30}
     for i, f in enumerate(fields, start=1):

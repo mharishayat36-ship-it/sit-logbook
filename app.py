@@ -3,9 +3,10 @@
 Run with:   python app.py      then open  http://127.0.0.1:5000
 """
 import os
+import secrets
 from datetime import date, datetime
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, request, url_for, session, jsonify
 
 from config import Config
 from models import db_session, init_db
@@ -18,6 +19,24 @@ def create_app(overrides=None) -> Flask:
     app.config.from_object(Config)
     if overrides:
         app.config.update(overrides)
+
+    def csrf_token():
+        if "csrf_token" not in session:
+            session["csrf_token"] = secrets.token_urlsafe(32)
+        return session["csrf_token"]
+
+    app.jinja_env.globals["csrf_token"] = csrf_token
+
+    @app.before_request
+    def protect_writes():
+        if app.config["CSRF_ENABLED"] and request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            supplied = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token", "")
+            expected = session.get("csrf_token", "")
+            if not expected or not secrets.compare_digest(supplied.encode(), expected.encode()):
+                message = "This form has expired. Refresh the page and try again."
+                if request.is_json:
+                    return jsonify(ok=False, error=message), 400
+                return render_template("error.html", code=400, message=message), 400
 
     for key in ("UPLOAD_FOLDER", "GENERATED_FOLDER", "EXPORT_FOLDER"):
         os.makedirs(app.config[key], exist_ok=True)
